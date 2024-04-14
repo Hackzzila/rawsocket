@@ -2,6 +2,7 @@ use crate::bpf::{bpf_program, bpf_stat};
 use std::os::{fd::AsRawFd, unix::prelude::RawFd};
 
 use super::{ioctl::*, DataLinkLayer};
+use libc::bpf_hdr;
 use rustix::{
   fd::OwnedFd,
   fs::{open, Mode, OFlags},
@@ -94,5 +95,46 @@ impl BpfSocket {
 
   pub fn read(&self, buf: &mut [u8]) -> io::Result<usize> {
     read(&self.fd, buf)
+  }
+
+  pub fn read_iter<'a>(&self, buf: &'a mut [u8]) -> io::Result<PacketIter<'a>> {
+    let bytes = read(&self.fd, buf)?;
+    Ok(PacketIter { buf: &buf[0..bytes] })
+  }
+}
+
+#[derive(Debug)]
+pub struct Packet<'a> {
+  pub timestamp: libc::timeval32,
+  pub original_length: u32,
+  pub capture: &'a [u8],
+}
+
+pub struct PacketIter<'a> {
+  pub(crate) buf: &'a [u8],
+}
+
+impl<'a> Iterator for PacketIter<'a> {
+  type Item = Packet<'a>;
+  fn next(&mut self) -> Option<Self::Item> {
+    if self.buf.len() < std::mem::size_of::<bpf_hdr>() {
+      return None;
+    }
+
+    let hdr: libc::bpf_hdr = unsafe { std::ptr::read(self.buf.as_ptr() as *const _) };
+
+    if self.buf.len() < hdr.bh_caplen as _ {
+      return None;
+    }
+
+    let (capture, rest) = self.buf[hdr.bh_hdrlen as _..].split_at(hdr.bh_caplen as _);
+
+    self.buf = rest;
+
+    Some(Packet {
+      timestamp: hdr.bh_tstamp,
+      original_length: hdr.bh_datalen,
+      capture,
+    })
   }
 }
