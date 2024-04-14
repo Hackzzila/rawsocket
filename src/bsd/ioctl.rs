@@ -4,7 +4,8 @@ use libc::{
 };
 use rustix::{io, ioctl};
 
-use crate::bpf::{bpf_program, bpf_stat, DataLinkLayer, RawDataLinkLayer};
+use super::{DataLinkLayer, RawDataLinkLayer};
+use crate::bpf::{bpf_program, bpf_stat};
 
 #[inline]
 #[doc(alias = "BIOCSBLEN")]

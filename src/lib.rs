@@ -2,7 +2,15 @@ use std::fmt::Debug;
 use std::fmt::Display;
 
 pub mod bpf;
-mod ioctl;
+#[cfg(any(
+  doc,
+  target_os = "macos",
+  target_os = "freebsd",
+  target_os = "dragonfly",
+  target_os = "openbsd",
+  target_os = "netbsd",
+))]
+pub mod bsd;
 
 // macro_rules! syscall {
 //     ($fn: ident ( $($arg: expr),* $(,)* ) ) => {{
