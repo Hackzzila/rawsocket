@@ -43,10 +43,35 @@ impl Debug for MacAddress {
   }
 }
 
-#[repr(C)]
 #[derive(Debug)]
-pub struct MacHeader {
+#[repr(C)]
+pub struct EthernetHeader {
   pub destination_mac: MacAddress,
   pub source_mac: MacAddress,
   pub ether_type: u16,
+}
+
+impl EthernetHeader {
+  pub fn try_decode(buf: &[u8]) -> Option<Self> {
+    if buf.len() < std::mem::size_of::<Self>() {
+      None
+    } else {
+      unsafe { std::ptr::read(buf.as_ptr() as *const _) }
+    }
+  }
+}
+
+#[derive(Debug)]
+pub struct EthernetPacket<'a> {
+  pub header: EthernetHeader,
+  pub payload: &'a [u8],
+}
+
+impl<'a> EthernetPacket<'a> {
+  pub fn try_decode(buf: &'a [u8]) -> Option<Self> {
+    let header = EthernetHeader::try_decode(buf)?;
+    let payload = &buf[std::mem::size_of::<EthernetHeader>()..];
+
+    Some(Self { header, payload })
+  }
 }
