@@ -1,7 +1,7 @@
 use crate::bpf::{bpf_program, bpf_stat};
 use std::os::{fd::AsRawFd, unix::prelude::RawFd};
 
-use super::{ioctl::*, DataLinkLayer};
+use super::{ioctl::*, BpfDirection, DataLinkLayer};
 use libc::bpf_hdr;
 use rustix::{
   fd::OwnedFd,
@@ -91,6 +91,14 @@ impl BpfSocket {
 
   pub fn get_stats(&self) -> io::Result<bpf_stat> {
     ioctl_biocgstats(&self.fd)
+  }
+
+  pub fn get_direction(&self) -> io::Result<BpfDirection> {
+    ioctl_biocgdirection(&self.fd)
+  }
+
+  pub fn set_direction(&self, value: BpfDirection) -> io::Result<()> {
+    ioctl_biocsdirection(&self.fd, value)
   }
 
   pub fn read(&self, buf: &mut [u8]) -> io::Result<usize> {

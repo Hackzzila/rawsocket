@@ -56,7 +56,7 @@ impl EthernetHeader {
     if buf.len() < std::mem::size_of::<Self>() {
       None
     } else {
-      unsafe { std::ptr::read(buf.as_ptr() as *const _) }
+      unsafe { Some(std::ptr::read(buf.as_ptr() as *const _)) }
     }
   }
 }

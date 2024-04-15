@@ -64,3 +64,32 @@ impl DataLinkLayer {
     self.0
   }
 }
+
+pub type RawBpfDirection = libc::c_uint;
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+#[repr(transparent)]
+pub struct BpfDirection(pub(crate) RawBpfDirection);
+
+#[allow(non_upper_case_globals)]
+impl BpfDirection {
+  /// `BPF_D_IN`
+  pub const IN: Self = Self(0);
+
+  /// `BPF_D_INOUT`
+  pub const IN_OUT: Self = Self(1);
+
+  /// `BPF_D_OUT`
+  pub const OUT: Self = Self(2);
+
+  /// Constructs a `DataLinkLayer` from a raw integer.
+  #[inline]
+  pub const fn from_raw(raw: RawBpfDirection) -> Self {
+    Self(raw)
+  }
+
+  /// Returns the raw integer for this `DataLinkLayer`.
+  #[inline]
+  pub const fn as_raw(self) -> RawBpfDirection {
+    self.0
+  }
+}

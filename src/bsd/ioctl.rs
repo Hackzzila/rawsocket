@@ -1,10 +1,10 @@
 use libc::{
-  c_ulong, ifreq, BIOCGBLEN, BIOCGDLT, BIOCGETIF, BIOCGRTIMEOUT, BIOCGSTATS, BIOCIMMEDIATE, BIOCSBLEN, BIOCSDLT,
-  BIOCSETF, BIOCSETIF, BIOCSRTIMEOUT, IFNAMSIZ,
+  c_ulong, ifreq, BIOCGBLEN, BIOCGDLT, BIOCGETIF, BIOCGRTIMEOUT, BIOCGSEESENT, BIOCGSTATS, BIOCIMMEDIATE, BIOCSBLEN,
+  BIOCSDLT, BIOCSETF, BIOCSETIF, BIOCSRTIMEOUT, BIOCSSEESENT, IFNAMSIZ,
 };
 use rustix::{io, ioctl};
 
-use super::{DataLinkLayer, RawDataLinkLayer};
+use super::{BpfDirection, DataLinkLayer, RawBpfDirection, RawDataLinkLayer};
 use crate::bpf::{bpf_program, bpf_stat};
 
 #[inline]
@@ -146,6 +146,24 @@ pub fn ioctl_biocgrtimeout<Fd: rustix::fd::AsFd>(fd: Fd) -> io::Result<Timeval> 
 pub fn ioctl_biocgstats<Fd: rustix::fd::AsFd>(fd: Fd) -> io::Result<bpf_stat> {
   unsafe {
     let ctl = ioctl::Getter::<ioctl::BadOpcode<{ BIOCGSTATS }>, bpf_stat>::new();
+    ioctl::ioctl(fd, ctl)
+  }
+}
+
+#[inline]
+#[doc(alias = "BIOCGDIRECTION", alias = "BIOCGSEESENT")]
+pub fn ioctl_biocgdirection<Fd: rustix::fd::AsFd>(fd: Fd) -> io::Result<BpfDirection> {
+  unsafe {
+    let ctl = ioctl::Getter::<ioctl::BadOpcode<{ BIOCGSEESENT }>, RawBpfDirection>::new();
+    ioctl::ioctl(fd, ctl).map(BpfDirection)
+  }
+}
+
+#[inline]
+#[doc(alias = "BIOCSDIRECTION", alias = "BIOCSSEESENT")]
+pub fn ioctl_biocsdirection<Fd: rustix::fd::AsFd>(fd: Fd, value: BpfDirection) -> io::Result<()> {
+  unsafe {
+    let ctl = ioctl::Setter::<ioctl::BadOpcode<{ BIOCSSEESENT }>, u32>::new(value.0);
     ioctl::ioctl(fd, ctl)
   }
 }
